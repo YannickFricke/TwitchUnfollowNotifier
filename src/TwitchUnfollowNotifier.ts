@@ -73,7 +73,7 @@ export class TwitchUnfollowNotifier {
      * @private
      * @memberof TwitchUnfollowNotifier
      */
-    private sleepDelay = 1000 * 60;
+    private sleepDelay = 1000 * 60 * 15;
 
     /**
      * Creates an instance of TwitchUnfollowNotifier.
