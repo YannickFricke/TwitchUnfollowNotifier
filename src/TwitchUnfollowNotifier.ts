@@ -1,4 +1,5 @@
 import { Database } from './data/Database';
+import { MessageManager } from './i18n/MessageManager';
 import logger from './logging/Logger';
 import { PushbulletClient } from './pushbullet/PushbulletClient';
 import { IUserData } from './structures/IUserData';
@@ -43,6 +44,15 @@ export class TwitchUnfollowNotifier {
     private database: Database;
 
     /**
+     * Manages all messages
+     *
+     * @private
+     * @type {MessageManager}
+     * @memberof TwitchUnfollowNotifier
+     */
+    private messageManager: MessageManager;
+
+    /**
      * The channel id of the Twitch channel to monitor
      *
      * @private
@@ -84,6 +94,7 @@ export class TwitchUnfollowNotifier {
             pushBulletToken,
         );
         this.database = new Database();
+        this.messageManager = new MessageManager();
         this.channelId = channelId;
 
         this.run = this.run.bind(this);
@@ -92,6 +103,7 @@ export class TwitchUnfollowNotifier {
     public async setUp() {
         await this.twitchChatClient.connect();
         this.database.read();
+        this.messageManager.readMessages();
     }
 
     /**
@@ -145,18 +157,17 @@ export class TwitchUnfollowNotifier {
     private async notify(userdata: IUserData) {
         const userName = userdata.name;
         const userLanguage = await this.twitchClient.getUserLanguage(userdata.id);
-        let message = '';
 
         this.pushbulletClient.notify(userName);
 
-        switch (userLanguage) {
-            case 'de':
-                message = `KonCha ${userName}, ich habe gerade gemerkt das du mir nicht mehr folgst. Magst du eventuell sagen warum, sodass ich meinen Stream verbessern kann? :)`;
-                break;
-            default:
-                message = `KonCha ${userName}, I noticed that you don't follow me anymore. Would you like to tell me the reason so that I can improve my stream? :)`;
-                break;
+        if (userLanguage === undefined) {
+            logger.error(`Could not fetch language for user ${userName} (${userdata.id})`);
+
+            return;
         }
+
+        let message = this.messageManager.getMessageForLanguage(userLanguage);
+        message = message.replace('%username%', userName);
 
         logger.debug(`Sending message to ${userName}. Language: ${userLanguage}`);
         this.twitchChatClient.sendPrivateMessage(userName, message);
