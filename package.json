@@ -1,0 +1,21 @@
+{
+    "name": "twitchunfollownotifier",
+    "version": "1.0.0",
+    "license": "MIT",
+    "scripts": {
+        "compile": "tsc --build tsconfig.json",
+        "dev": "nodemon dist/index.js -i \"*.json\"",
+        "watch": "tsc --watch"
+    },
+    "dependencies": {
+        "axios": "^0.19.0",
+        "tmi.js": "^1.4.5",
+        "winston": "^3.2.1"
+    },
+    "devDependencies": {
+        "@types/node": "^12.7.4",
+        "@types/tmi.js": "^1.4.0",
+        "nodemon": "^1.19.2",
+        "typescript": "^3.6.2"
+    }
+}

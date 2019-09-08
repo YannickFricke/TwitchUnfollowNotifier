@@ -1,0 +1,11 @@
+{
+    "twitch": {
+        "clientId": "<Your Twitch client id>",
+        "channelId": "<Your Twitch channel id>",
+        "channelName": "<Your Twitch channel name>",
+        "oauthToken": "<Your Twitch oauth token>"
+    },
+    "pushbullet": {
+        "apiToken": "<Your Pushbullet API token>"
+    }
+}
