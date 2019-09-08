@@ -25,6 +25,10 @@ export class PushbulletClient {
         });
     }
 
+    /**
+     * Notifies the broadcaster about the unfollow
+     * @param {string} username The name of the user
+     */
     public async notify(
         username: string,
     ) {

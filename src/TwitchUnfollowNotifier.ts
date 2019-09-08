@@ -6,6 +6,12 @@ import { IUserData } from './structures/IUserData';
 import { TwitchChatClient } from './twitch/TwitchChatClient';
 import { TwitchClient } from './twitch/TwitchClient';
 
+/**
+ * The application
+ *
+ * @export
+ * @class TwitchUnfollowNotifier
+ */
 export class TwitchUnfollowNotifier {
     /**
      * The Twitch client that will be used for fetching the followers
@@ -73,6 +79,8 @@ export class TwitchUnfollowNotifier {
      * Creates an instance of TwitchUnfollowNotifier.
      * @param {string} clientId The client id of the Twitch application
      * @param {number} channelId The channel id of the Twitch channel to check
+     * @param {string} channelName The name of the channel
+     * @param {string} oauthToken
      * @param {string} pushBulletToken The API token for Pushbullet
      * @memberof TwitchUnfollowNotifier
      */
@@ -89,7 +97,7 @@ export class TwitchUnfollowNotifier {
         this.twitchChatClient = new TwitchChatClient(
             channelName,
             oauthToken,
-        )
+        );
         this.pushbulletClient = new PushbulletClient(
             pushBulletToken,
         );
@@ -116,19 +124,21 @@ export class TwitchUnfollowNotifier {
 
         logger.info('Checking for unfollows');
 
-        this.database.followers.forEach(async (follower) => {
-            if (followers.find(
-                entry => entry.id === follower.id
-            ) === undefined) {
-                await this.notify(follower);
 
-                this.database.removeFollower(follower.id);
+
+        for (const knownFollower of this.database.followers) {
+            if (followers.filter(
+                entry => entry.id === knownFollower.id,
+            ).length === 0) {
+                await this.notify(knownFollower);
+
+                this.database.removeFollower(knownFollower.id);
 
                 logger.info(
-                    `User ${follower.name} unfollowed!`,
+                    `User ${knownFollower.name} unfollowed!`,
                 );
             }
-        });
+        }
 
         followers.forEach(entry => {
             if (this.database.containsFollower(entry.id)) {
@@ -138,7 +148,7 @@ export class TwitchUnfollowNotifier {
             logger.info(`User ${entry.name} follows now`);
 
             this.database.addNewFollower(entry);
-        })
+        });
 
         logger.info('Checked for unfollows');
 
@@ -151,14 +161,14 @@ export class TwitchUnfollowNotifier {
      * Notifies the user through Pushbullet
      *
      * @private
-     * @param {string} username The name of the user who unfollowed
+     * @param {string} userdata The data of the user
      * @memberof TwitchUnfollowNotifier
      */
     private async notify(userdata: IUserData) {
         const userName = userdata.name;
         const userLanguage = await this.twitchClient.getUserLanguage(userdata.id);
 
-        this.pushbulletClient.notify(userName);
+        await this.pushbulletClient.notify(userName);
 
         if (userLanguage === undefined) {
             logger.error(`Could not fetch language for user ${userName} (${userdata.id})`);

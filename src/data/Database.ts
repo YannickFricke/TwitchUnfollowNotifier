@@ -2,6 +2,12 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import logger from '../logging/Logger';
 import { IUserData } from '../structures/IUserData';
 
+/**
+ * Manages all known followers
+ *
+ * @export
+ * @class Database
+ */
 export class Database {
     /**
      * The filename of the database
@@ -50,7 +56,7 @@ export class Database {
         this.followers = [
             followerData,
             ...this.followers,
-        ]
+        ];
         this.shouldSave = true;
     }
 

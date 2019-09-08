@@ -1,19 +1,40 @@
 import { readFileSync } from 'fs';
 import { IKeyValue } from '../structures/IKeyValue';
 
+type Messages = IKeyValue & {
+    default: string;
+}
+
+/**
+ * Manages messages based on their language
+ *
+ * @export
+ * @class MessageManager
+ */
 export class MessageManager {
+    /**
+     * The filename where the messages are located
+     *
+     * @private
+     * @memberof MessageManager
+     */
     private fileName = './data/messages.json';
 
-    private messages!: IKeyValue & {
-        default: string;
-    };
+    /**
+     * Contains the parsed messages
+     *
+     * @private
+     * @type Messages
+     * @memberof MessageManager
+     */
+    private messages!: Messages;
 
     /**
      * Reads the messages from the file
      *
      * @memberof MessageManager
      */
-    public readMessages() {
+    public readMessages(): void {
         const fileContents = readFileSync(this.fileName);
         this.messages = JSON.parse(fileContents.toString('UTF-8'));
     }
