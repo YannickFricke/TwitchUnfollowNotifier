@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "fs";
-import { IUserData } from './IUserData';
-import logger from './logger';
+import logger from '../logging/Logger';
+import { IUserData } from '../structures/IUserData';
 
 export class Database {
     /**

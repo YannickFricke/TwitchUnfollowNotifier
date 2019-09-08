@@ -1,9 +1,9 @@
-import { Database } from './Database';
-import { IUserData } from './IUserData';
-import logger from './logger';
-import { PushbulletClient } from './PushbulletClient';
-import { TwitchChatClient } from './TwitchChatClient';
-import { TwitchClient } from './TwitchClient';
+import { Database } from './data/Database';
+import logger from './logging/Logger';
+import { PushbulletClient } from './pushbullet/PushbulletClient';
+import { IUserData } from './structures/IUserData';
+import { TwitchChatClient } from './twitch/TwitchChatClient';
+import { TwitchClient } from './twitch/TwitchClient';
 
 export class TwitchUnfollowNotifier {
     /**

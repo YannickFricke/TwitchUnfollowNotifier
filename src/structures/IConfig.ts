@@ -1,3 +1,5 @@
+import { IKeyValue } from './IKeyValue';
+
 /**
  * Describes the configuration file
  *
@@ -13,5 +15,9 @@ export interface IConfig {
     };
     pushbullet: {
         apiToken: string;
-    }
+    };
+
+    messages: IKeyValue & {
+        default: string;
+    };
 }
