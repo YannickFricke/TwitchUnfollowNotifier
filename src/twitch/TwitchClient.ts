@@ -1,8 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
+import logger from '../logging/Logger';
+import { IKeyValue } from '../structures/IKeyValue';
+import { IUserData } from '../structures/IUserData';
 import { IFollowerData } from './IFollowerData';
-import { IKeyValue } from './IKeyValue';
-import { IUserData } from './IUserData';
-import logger from './logger';
 
 export class TwitchClient {
     /**

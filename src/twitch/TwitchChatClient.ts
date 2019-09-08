@@ -1,5 +1,5 @@
 import { Client } from "tmi.js";
-import logger from './logger';
+import logger from '../logging/Logger';
 
 export class TwitchChatClient {
     /**
