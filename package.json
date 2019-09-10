@@ -5,6 +5,7 @@
     "scripts": {
         "compile": "tsc --build tsconfig.json",
         "dev": "nodemon dist/index.js -i \"*.json\"",
+        "dev:watch": "concurrently \"yarn run watch\" \"yarn run dev\"",
         "watch": "tsc --watch"
     },
     "dependencies": {
@@ -15,6 +16,7 @@
     "devDependencies": {
         "@types/node": "^12.7.4",
         "@types/tmi.js": "^1.4.0",
+        "concurrently": "^4.1.2",
         "nodemon": "^1.19.2",
         "typescript": "^3.6.2"
     }
