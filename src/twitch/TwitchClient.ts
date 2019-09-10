@@ -79,17 +79,25 @@ export class TwitchClient {
                     this.baseUrl + this.getQueryString(queryParameters),
                 );
             } catch (error) {
+                logger.debug(`Error code: ${error.code}`);
+                logger.debug(`Error response: ${JSON.stringify(error.response, null, 4)}`);
+
                 if (error.response !== undefined && error.code === 429) {
+                    logger.warn('Hit the API rate limit!');
+
                     const resetHeader = error.response.headers['ratelimit-reset'];
 
                     let resetTimestamp = this.getCurrentTimestamp() + (60 * 1000);
 
                     if (resetHeader !== undefined) {
+                        logger.debug('Rate limit header was found');
                         resetTimestamp = parseInt(resetHeader, 10);
                     }
 
+                    logger.warn(`Waiting until: ${resetTimestamp}`);
+
                     await this.waitUntilTimeStamp(resetTimestamp);
-                    break;
+                    continue;
                 }
 
                 logger.error(
