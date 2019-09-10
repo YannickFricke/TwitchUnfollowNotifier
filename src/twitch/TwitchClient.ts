@@ -79,8 +79,14 @@ export class TwitchClient {
                     this.baseUrl + this.getQueryString(queryParameters),
                 );
             } catch (error) {
-                logger.debug(`Error code: ${error.code}`);
-                logger.debug(`Error response: ${JSON.stringify(error.response, null, 4)}`);
+                if (error.code !== undefined) {
+                    logger.debug(`Error code: ${error.code}`);
+                }
+
+                if (error.response !== undefined) {
+                    logger.debug(`Error response headers: ${JSON.stringify(error.response.headers, null, 4)}`);
+                    logger.debug(`Error response data: ${JSON.stringify(error.response.data, null, 4)}`);
+                }
 
                 if (error.response !== undefined && error.code === 429) {
                     logger.warn('Hit the API rate limit!');
