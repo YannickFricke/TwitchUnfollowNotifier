@@ -171,9 +171,15 @@ export class TwitchUnfollowNotifier {
      */
     private async notify(userdata: IUserData) {
         const userName = userdata.name;
-        const userLanguage = await this.twitchClient.getUserLanguage(userdata.id);
+        const userId = userdata.id;
+        const userLanguage = await this.twitchClient.getUserLanguage(userId);
 
         await this.pushbulletClient.notify(userName);
+
+        if (userLanguage === null) {
+            logger.warn(`The channel of user ${userName} (${userId}) was deleted`);
+            return;
+        }
 
         let message = this.messageManager.getMessageForLanguage(userLanguage);
         message = message.replace('%username%', userName);
