@@ -79,6 +79,19 @@ export class TwitchClient {
                     this.baseUrl + this.getQueryString(queryParameters),
                 );
             } catch (error) {
+                if (error.response !== undefined && error.code === 429) {
+                    const resetHeader = error.response.headers['ratelimit-reset'];
+
+                    let resetTimestamp = this.getCurrentTimestamp() + (60 * 1000);
+
+                    if (resetHeader !== undefined) {
+                        resetTimestamp = parseInt(resetHeader, 10);
+                    }
+
+                    await this.waitUntilTimeStamp(resetTimestamp);
+                    break;
+                }
+
                 logger.error(
                     `Could not fetch the followers: ${error}`,
                 );
@@ -119,13 +132,18 @@ export class TwitchClient {
      * @returns {(Promise<string | undefined>)} Undefined when an error occured. Otherwise the set language.
      * @memberof TwitchClient
      */
-    public async getUserLanguage(userId: string): Promise<string | undefined> {
+    public async getUserLanguage(userId: string): Promise<string | undefined | null> {
         let response;
 
         try {
             response = await this.httpClient.get(`https://api.twitch.tv/kraken/channels/${userId}`);
         } catch (error) {
-            logger.error(`Could not fetch the user language: ${error}`);
+            // Account does not exists anymore
+            if (error.code === 422) {
+                return Promise.resolve(null);
+            }
+
+            logger.error(`Could not fetch the user language for user ${userId}: ${error}`);
 
             return Promise.resolve(undefined);
         }
@@ -150,5 +168,31 @@ export class TwitchClient {
         return Object.keys(params)
             .map((k) => esc(k) + '=' + esc(params[k]))
             .join('&');
+    }
+
+    /**
+     * Returns a promise which resolves when the timestamp was exceeded
+     *
+     * @private
+     * @param {number} timestamp The timestamp which will be awaited
+     * @returns
+     * @memberof TwitchClient
+     */
+    private async waitUntilTimeStamp(timestamp: number) {
+        const currentTimestamp = this.getCurrentTimestamp();
+        const difference = timestamp - currentTimestamp;
+
+        return Promise.resolve((resolve: () => void) => setTimeout(resolve, difference));
+    }
+
+    /**
+     * Returns the current unix timestamp
+     *
+     * @private
+     * @returns The current unix timestamp
+     * @memberof TwitchClient
+     */
+    private getCurrentTimestamp() {
+        return Math.round((new Date()).getTime() / 1000);
     }
 }
