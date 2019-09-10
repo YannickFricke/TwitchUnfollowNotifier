@@ -170,12 +170,6 @@ export class TwitchUnfollowNotifier {
 
         await this.pushbulletClient.notify(userName);
 
-        if (userLanguage === undefined) {
-            logger.error(`Could not fetch language for user ${userName} (${userdata.id})`);
-
-            return;
-        }
-
         let message = this.messageManager.getMessageForLanguage(userLanguage);
         message = message.replace('%username%', userName);
 

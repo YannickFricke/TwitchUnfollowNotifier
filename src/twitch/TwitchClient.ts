@@ -125,12 +125,24 @@ export class TwitchClient {
         try {
             response = await this.httpClient.get(`https://api.twitch.tv/kraken/channels/${userId}`);
         } catch (error) {
+            logger.error(`Could not fetch the user language: ${error}`);
+
             return Promise.resolve(undefined);
         }
 
         const responseData = response.data;
 
-        return Promise.resolve(responseData.language);
+        if (responseData === null || responseData === undefined) {
+            return Promise.resolve(undefined);
+        }
+
+        const userLanguage = responseData.language;
+
+        if (userLanguage === null || userLanguage === undefined) {
+            return Promise.resolve(undefined);
+        }
+
+        return Promise.resolve(userLanguage);
     }
 
     private getQueryString(params: any) {

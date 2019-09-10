@@ -46,7 +46,11 @@ export class MessageManager {
      * @returns The message for the language or the default message when no message was found
      * @memberof MessageManager
      */
-    public getMessageForLanguage(language: string): string {
+    public getMessageForLanguage(language: string | undefined): string {
+        if (language === undefined) {
+            return this.messages.default;
+        }
+
         if (this.messages[language] === undefined) {
             return this.messages.default;
         }
