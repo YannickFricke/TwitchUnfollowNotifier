@@ -68,7 +68,7 @@ export class TwitchUnfollowNotifier {
     private channelId: string;
 
     /**
-     * The time to sleep
+     * The time to sleep (15 minutes)
      *
      * @private
      * @memberof TwitchUnfollowNotifier
@@ -108,6 +108,11 @@ export class TwitchUnfollowNotifier {
         this.run = this.run.bind(this);
     }
 
+    /**
+     * Sets up the Twitch unfollow notifier
+     *
+     * @memberof TwitchUnfollowNotifier
+     */
     public async setUp() {
         await this.twitchChatClient.connect();
         this.database.read();
