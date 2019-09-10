@@ -194,14 +194,14 @@ export class TwitchClient {
      * @returns
      * @memberof TwitchClient
      */
-    private async waitUntilTimeStamp(timestamp: number) {
+    private waitUntilTimeStamp(timestamp: number): Promise<NodeJS.Timeout> {
         const currentTimestamp = this.getCurrentTimestamp();
         const difference = (timestamp - currentTimestamp) * 1000;
 
         logger.debug(`Current timestamp: ${currentTimestamp}`);
         logger.debug(`Timestamp difference: ${difference}`);
 
-        return Promise.resolve((resolve: any) => setTimeout(resolve, difference));
+        return new Promise((resolve) => setTimeout(resolve, difference));
     }
 
     /**
