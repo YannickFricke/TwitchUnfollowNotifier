@@ -79,17 +79,33 @@ export class TwitchClient {
                     this.baseUrl + this.getQueryString(queryParameters),
                 );
             } catch (error) {
-                if (error.response !== undefined && error.code === 429) {
-                    const resetHeader = error.response.headers['ratelimit-reset'];
+                let statusCode = error.code;
+                let resetTimestamp = this.getCurrentTimestamp() + (60 * 1000);
 
-                    let resetTimestamp = this.getCurrentTimestamp() + (60 * 1000);
+                if (error.response !== undefined) {
+                    if (statusCode === undefined) {
+                        const errorResponseData = error.response.data;
 
-                    if (resetHeader !== undefined) {
-                        resetTimestamp = parseInt(resetHeader, 10);
+                        statusCode = errorResponseData.status;
                     }
 
+                    const resetHeader = error.response.headers['ratelimit-reset'];
+
+                    if (resetHeader !== undefined) {
+                        logger.debug('Rate limit header was found');
+                        resetTimestamp = parseInt(resetHeader, 10);
+                    }
+                }
+
+                if (statusCode === 429) {
+                    logger.warn('Hit the API rate limit!');
+                    logger.warn(`Waiting until: ${resetTimestamp}`);
+
                     await this.waitUntilTimeStamp(resetTimestamp);
-                    break;
+
+                    continue;
+                } else {
+                    logger.error(`Unknown status code: ${statusCode}`);
                 }
 
                 logger.error(
@@ -178,11 +194,14 @@ export class TwitchClient {
      * @returns
      * @memberof TwitchClient
      */
-    private async waitUntilTimeStamp(timestamp: number) {
+    private waitUntilTimeStamp(timestamp: number): Promise<NodeJS.Timeout> {
         const currentTimestamp = this.getCurrentTimestamp();
-        const difference = timestamp - currentTimestamp;
+        const difference = (timestamp - currentTimestamp) * 1000;
 
-        return Promise.resolve((resolve: () => void) => setTimeout(resolve, difference));
+        logger.debug(`Current timestamp: ${currentTimestamp}`);
+        logger.debug(`Timestamp difference: ${difference}`);
+
+        return new Promise((resolve) => setTimeout(resolve, difference));
     }
 
     /**
