@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
-import { IConfig } from './IConfig';
-import logger from './logger';
+import logger from './logging/Logger';
+import { IConfig } from './structures/IConfig';
 import { TwitchUnfollowNotifier } from './TwitchUnfollowNotifier';
 
 // Read the configuration file

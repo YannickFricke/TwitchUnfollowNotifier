@@ -1,5 +1,5 @@
 import { Client } from "tmi.js";
-import logger from './logger';
+import logger from '../logging/Logger';
 
 export class TwitchChatClient {
     /**
@@ -81,6 +81,7 @@ export class TwitchChatClient {
         logger.debug('Disconnected from the Twitch IRC server. Trying to reconnect');
 
         while (this.try < this.maxTries && !this.connected) {
+            this.try += 1;
             this.connect();
         }
 

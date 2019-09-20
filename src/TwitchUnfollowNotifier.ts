@@ -1,10 +1,17 @@
-import { Database } from './Database';
-import { IUserData } from './IUserData';
-import logger from './logger';
-import { PushbulletClient } from './PushbulletClient';
-import { TwitchChatClient } from './TwitchChatClient';
-import { TwitchClient } from './TwitchClient';
+import { Database } from './data/Database';
+import { MessageManager } from './i18n/MessageManager';
+import logger from './logging/Logger';
+import { PushbulletClient } from './pushbullet/PushbulletClient';
+import { IUserData } from './structures/IUserData';
+import { TwitchChatClient } from './twitch/TwitchChatClient';
+import { TwitchClient } from './twitch/TwitchClient';
 
+/**
+ * The application
+ *
+ * @export
+ * @class TwitchUnfollowNotifier
+ */
 export class TwitchUnfollowNotifier {
     /**
      * The Twitch client that will be used for fetching the followers
@@ -43,6 +50,15 @@ export class TwitchUnfollowNotifier {
     private database: Database;
 
     /**
+     * Manages all messages
+     *
+     * @private
+     * @type {MessageManager}
+     * @memberof TwitchUnfollowNotifier
+     */
+    private messageManager: MessageManager;
+
+    /**
      * The channel id of the Twitch channel to monitor
      *
      * @private
@@ -52,17 +68,19 @@ export class TwitchUnfollowNotifier {
     private channelId: string;
 
     /**
-     * The time to sleep
+     * The time to sleep (15 minutes)
      *
      * @private
      * @memberof TwitchUnfollowNotifier
      */
-    private sleepDelay = 1000 * 60;
+    private sleepDelay = 1000 * 60 * 15;
 
     /**
      * Creates an instance of TwitchUnfollowNotifier.
      * @param {string} clientId The client id of the Twitch application
      * @param {number} channelId The channel id of the Twitch channel to check
+     * @param {string} channelName The name of the channel
+     * @param {string} oauthToken
      * @param {string} pushBulletToken The API token for Pushbullet
      * @memberof TwitchUnfollowNotifier
      */
@@ -79,19 +97,26 @@ export class TwitchUnfollowNotifier {
         this.twitchChatClient = new TwitchChatClient(
             channelName,
             oauthToken,
-        )
+        );
         this.pushbulletClient = new PushbulletClient(
             pushBulletToken,
         );
         this.database = new Database();
+        this.messageManager = new MessageManager();
         this.channelId = channelId;
 
         this.run = this.run.bind(this);
     }
 
+    /**
+     * Sets up the Twitch unfollow notifier
+     *
+     * @memberof TwitchUnfollowNotifier
+     */
     public async setUp() {
         await this.twitchChatClient.connect();
         this.database.read();
+        this.messageManager.readMessages();
     }
 
     /**
@@ -104,19 +129,21 @@ export class TwitchUnfollowNotifier {
 
         logger.info('Checking for unfollows');
 
-        this.database.followers.forEach(async (follower) => {
-            if (followers.find(
-                entry => entry.id === follower.id
-            ) === undefined) {
-                await this.notify(follower);
 
-                this.database.removeFollower(follower.id);
+
+        for (const knownFollower of this.database.followers) {
+            if (followers.filter(
+                entry => entry.id === knownFollower.id,
+            ).length === 0) {
+                await this.notify(knownFollower);
+
+                this.database.removeFollower(knownFollower.id);
 
                 logger.info(
-                    `User ${follower.name} unfollowed!`,
+                    `User ${knownFollower.name} unfollowed!`,
                 );
             }
-        });
+        }
 
         followers.forEach(entry => {
             if (this.database.containsFollower(entry.id)) {
@@ -126,7 +153,7 @@ export class TwitchUnfollowNotifier {
             logger.info(`User ${entry.name} follows now`);
 
             this.database.addNewFollower(entry);
-        })
+        });
 
         logger.info('Checked for unfollows');
 
@@ -139,24 +166,23 @@ export class TwitchUnfollowNotifier {
      * Notifies the user through Pushbullet
      *
      * @private
-     * @param {string} username The name of the user who unfollowed
+     * @param {string} userdata The data of the user
      * @memberof TwitchUnfollowNotifier
      */
     private async notify(userdata: IUserData) {
         const userName = userdata.name;
-        const userLanguage = await this.twitchClient.getUserLanguage(userdata.id);
-        let message = '';
+        const userId = userdata.id;
+        const userLanguage = await this.twitchClient.getUserLanguage(userId);
 
-        this.pushbulletClient.notify(userName);
+        await this.pushbulletClient.notify(userName);
 
-        switch (userLanguage) {
-            case 'de':
-                message = `KonCha ${userName}, ich habe gerade gemerkt das du mir nicht mehr folgst. Magst du eventuell sagen warum, sodass ich meinen Stream verbessern kann? :)`;
-                break;
-            default:
-                message = `KonCha ${userName}, I noticed that you don't follow me anymore. Would you like to tell me the reason so that I can improve my stream? :)`;
-                break;
+        if (userLanguage === null) {
+            logger.warn(`The channel of user ${userName} (${userId}) was deleted`);
+            return;
         }
+
+        let message = this.messageManager.getMessageForLanguage(userLanguage);
+        message = message.replace('%username%', userName);
 
         logger.debug(`Sending message to ${userName}. Language: ${userLanguage}`);
         this.twitchChatClient.sendPrivateMessage(userName, message);

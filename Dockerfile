@@ -25,6 +25,9 @@ COPY ./src/ ./src/
 # Copy the credentials
 COPY config.json .
 
+# Copy the messages
+COPY ./data/ ./data/
+
 # Transpile the source files
 RUN yarn run compile
 

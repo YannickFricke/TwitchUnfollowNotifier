@@ -1,8 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
+import logger from '../logging/Logger';
+import { IKeyValue } from '../structures/IKeyValue';
+import { IUserData } from '../structures/IUserData';
 import { IFollowerData } from './IFollowerData';
-import { IKeyValue } from './IKeyValue';
-import { IUserData } from './IUserData';
-import logger from './logger';
 
 export class TwitchClient {
     /**
@@ -79,6 +79,35 @@ export class TwitchClient {
                     this.baseUrl + this.getQueryString(queryParameters),
                 );
             } catch (error) {
+                let statusCode = error.code;
+                let resetTimestamp = this.getCurrentTimestamp() + (60 * 1000);
+
+                if (error.response !== undefined) {
+                    if (statusCode === undefined) {
+                        const errorResponseData = error.response.data;
+
+                        statusCode = errorResponseData.status;
+                    }
+
+                    const resetHeader = error.response.headers['ratelimit-reset'];
+
+                    if (resetHeader !== undefined) {
+                        logger.debug('Rate limit header was found');
+                        resetTimestamp = parseInt(resetHeader, 10);
+                    }
+                }
+
+                if (statusCode === 429) {
+                    logger.warn('Hit the API rate limit!');
+                    logger.warn(`Waiting until: ${resetTimestamp}`);
+
+                    await this.waitUntilTimeStamp(resetTimestamp);
+
+                    continue;
+                } else {
+                    logger.error(`Unknown status code: ${statusCode}`);
+                }
+
                 logger.error(
                     `Could not fetch the followers: ${error}`,
                 );
@@ -119,18 +148,35 @@ export class TwitchClient {
      * @returns {(Promise<string | undefined>)} Undefined when an error occured. Otherwise the set language.
      * @memberof TwitchClient
      */
-    public async getUserLanguage(userId: string): Promise<string | undefined> {
+    public async getUserLanguage(userId: string): Promise<string | undefined | null> {
         let response;
 
         try {
             response = await this.httpClient.get(`https://api.twitch.tv/kraken/channels/${userId}`);
         } catch (error) {
+            // Account does not exists anymore
+            if (error.code === 422) {
+                return Promise.resolve(null);
+            }
+
+            logger.error(`Could not fetch the user language for user ${userId}: ${error}`);
+
             return Promise.resolve(undefined);
         }
 
         const responseData = response.data;
 
-        return Promise.resolve(responseData.language);
+        if (responseData === null || responseData === undefined) {
+            return Promise.resolve(undefined);
+        }
+
+        const userLanguage = responseData.language;
+
+        if (userLanguage === null || userLanguage === undefined) {
+            return Promise.resolve(undefined);
+        }
+
+        return Promise.resolve(userLanguage);
     }
 
     private getQueryString(params: any) {
@@ -138,5 +184,34 @@ export class TwitchClient {
         return Object.keys(params)
             .map((k) => esc(k) + '=' + esc(params[k]))
             .join('&');
+    }
+
+    /**
+     * Returns a promise which resolves when the timestamp was exceeded
+     *
+     * @private
+     * @param {number} timestamp The timestamp which will be awaited
+     * @returns
+     * @memberof TwitchClient
+     */
+    private waitUntilTimeStamp(timestamp: number): Promise<NodeJS.Timeout> {
+        const currentTimestamp = this.getCurrentTimestamp();
+        const difference = (timestamp - currentTimestamp) * 1000;
+
+        logger.debug(`Current timestamp: ${currentTimestamp}`);
+        logger.debug(`Timestamp difference: ${difference}`);
+
+        return new Promise((resolve) => setTimeout(resolve, difference));
+    }
+
+    /**
+     * Returns the current unix timestamp
+     *
+     * @private
+     * @returns The current unix timestamp
+     * @memberof TwitchClient
+     */
+    private getCurrentTimestamp() {
+        return Math.round((new Date()).getTime() / 1000);
     }
 }
