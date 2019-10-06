@@ -68,6 +68,24 @@ export class TwitchUnfollowNotifier {
     private channelId: string;
 
     /**
+     * The amount of checks to do before the notification is send
+     *
+     * @private
+     * @type {number}
+     * @memberof TwitchUnfollowNotifier
+     */
+    private checksBeforeNotification: number;
+
+    /**
+     * Contains the amount of unfollow checks for each user id
+     *
+     * @private
+     * @type {Map<string, number>}
+     * @memberof TwitchUnfollowNotifier
+     */
+    private unfollowChecks: Map<string, number>;
+
+    /**
      * The time to sleep (15 minutes)
      *
      * @private
@@ -80,8 +98,9 @@ export class TwitchUnfollowNotifier {
      * @param {string} clientId The client id of the Twitch application
      * @param {number} channelId The channel id of the Twitch channel to check
      * @param {string} channelName The name of the channel
-     * @param {string} oauthToken
+     * @param {string} oauthToken The OAuth token for the Twitch Chat
      * @param {string} pushBulletToken The API token for Pushbullet
+     * @param {number} checksBeforeNotification Amount of checks before notifications should be send
      * @memberof TwitchUnfollowNotifier
      */
     constructor(
@@ -90,6 +109,7 @@ export class TwitchUnfollowNotifier {
         channelName: string,
         oauthToken: string,
         pushBulletToken: string,
+        checksBeforeNotification: number,
     ) {
         this.twitchClient = new TwitchClient(
             clientId,
@@ -104,6 +124,8 @@ export class TwitchUnfollowNotifier {
         this.database = new Database();
         this.messageManager = new MessageManager();
         this.channelId = channelId;
+        this.checksBeforeNotification = checksBeforeNotification;
+        this.unfollowChecks = new Map<string, number>();
 
         this.run = this.run.bind(this);
     }
@@ -129,12 +151,24 @@ export class TwitchUnfollowNotifier {
 
         logger.info('Checking for unfollows');
 
-
-
         for (const knownFollower of this.database.followers) {
             if (followers.filter(
                 entry => entry.id === knownFollower.id,
             ).length === 0) {
+                if (!this.unfollowChecks.has(knownFollower.id)) {
+                    this.unfollowChecks.set(knownFollower.id, 1);
+                }
+
+                const checkNumber = this.unfollowChecks.get(knownFollower.id) as number;
+
+                logger.debug(`User ${knownFollower.name} does not follow since ${checkNumber} checks!`);
+
+                this.unfollowChecks.set(knownFollower.id, checkNumber + 1);
+
+                if (checkNumber < this.checksBeforeNotification) {
+                    continue;
+                }
+
                 await this.notify(knownFollower);
 
                 this.database.removeFollower(knownFollower.id);
@@ -146,6 +180,11 @@ export class TwitchUnfollowNotifier {
         }
 
         followers.forEach(entry => {
+            if (this.unfollowChecks.has(entry.id)) {
+                logger.debug(`Deleted ${entry.name} from the unfollow check`);
+                this.unfollowChecks.delete(entry.id);
+            }
+
             if (this.database.containsFollower(entry.id)) {
                 return;
             }
