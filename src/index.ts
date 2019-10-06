@@ -23,6 +23,7 @@ async function main() {
         readConfig.twitch.channelName,
         readConfig.twitch.oauthToken,
         readConfig.pushbullet.apiToken,
+        readConfig.settings.checksBeforeNotification,
     );
 
     logger.info('Starting up!');
