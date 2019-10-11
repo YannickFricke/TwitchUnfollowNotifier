@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import logger from '../logging/Logger';
 import { IUserData } from '../structures/IUserData';
+import { IDatabase } from './IDatabase';
 
 /**
  * Manages all known followers
@@ -28,11 +29,20 @@ export class Database {
     /**
      * Contains all followers
      *
-     * @private
+     * @public
      * @type {IUserData[]}
      * @memberof Database
      */
     public followers: IUserData[];
+
+    /**
+     * Contains all users who already got messaged
+     *
+     * @private
+     * @type {string[]}
+     * @memberof Database
+     */
+    private messagedUsers: string[];
 
     /**
      * Creates an instance of Database.
@@ -40,6 +50,7 @@ export class Database {
      */
     constructor() {
         this.followers = [];
+        this.messagedUsers = [];
     }
 
     /**
@@ -88,6 +99,28 @@ export class Database {
     }
 
     /**
+     * Adds the given user id to the messaged users
+     * 
+     * @param userId The user id to add
+     */
+    public addMessagedUser(userId: string) {
+        this.messagedUsers.push(userId);
+
+        this.shouldSave = true;
+    }
+
+    /**
+     * Checks if the given user id was already messaged
+     * 
+     * @param userId The user id to check
+     */
+    public containsMessagedUser(userId: string): boolean {
+        return this.messagedUsers.find((messagedUser) => {
+            return messagedUser === userId;
+        }) !== undefined;
+    }
+
+    /**
      * Saves the database to the file
      *
      * @memberof Database
@@ -101,7 +134,16 @@ export class Database {
 
         logger.debug('Saving database');
 
-        const dataToSave = JSON.stringify(this.followers);
+        const databaseToSave: IDatabase = {
+            followers: this.followers,
+            messagedUsers: this.messagedUsers,
+        }
+
+        const dataToSave = JSON.stringify(
+            databaseToSave,
+            undefined,
+            4,
+        );
 
         writeFileSync(
             this.fileName,
@@ -131,8 +173,10 @@ export class Database {
         }
 
         const readFile = readFileSync(this.fileName);
+        const parsedFile: IDatabase = JSON.parse(readFile.toString('UTF-8'));
 
-        this.followers = JSON.parse(readFile.toString('UTF-8'));
+        this.followers = parsedFile.followers;
+        this.messagedUsers = parsedFile.messagedUsers;
 
         logger.debug('Read the database');
     }
