@@ -215,6 +215,12 @@ export class TwitchUnfollowNotifier {
 
         await this.pushbulletClient.notify(userName);
 
+        if (this.database.containsMessagedUser(userId)) {
+            return;
+        }
+
+        this.database.addMessagedUser(userId);
+
         if (userLanguage === null) {
             logger.warn(`The channel of user ${userName} (${userId}) was deleted`);
             return;
