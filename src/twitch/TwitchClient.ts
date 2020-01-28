@@ -198,9 +198,6 @@ export class TwitchClient {
         const currentTimestamp = this.getCurrentTimestamp();
         const difference = (timestamp - currentTimestamp) * 1000;
 
-        logger.debug(`Current timestamp: ${currentTimestamp}`);
-        logger.debug(`Timestamp difference: ${difference}`);
-
         return new Promise((resolve) => setTimeout(resolve, difference));
     }
 

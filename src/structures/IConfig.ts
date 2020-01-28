@@ -1,4 +1,3 @@
-import { IKeyValue } from './IKeyValue';
 
 /**
  * Describes the configuration file
@@ -38,4 +37,8 @@ export interface IConfig {
     pushbullet: {
         apiToken: string;
     };
+
+    settings: {
+        checksBeforeNotification: number;
+    }
 }
