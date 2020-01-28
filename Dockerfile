@@ -32,4 +32,4 @@ COPY ./data/ ./data/
 RUN yarn run compile
 
 # Set the entrypoint for the application
-CMD [ "node", "dist/index.js" ]
+ENTRYPOINT [ "node", "dist/index.js" ]
