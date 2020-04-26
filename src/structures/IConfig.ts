@@ -40,5 +40,6 @@ export interface IConfig {
 
     settings: {
         checksBeforeNotification: number;
+        messageUsers: boolean;
     }
 }

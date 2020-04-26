@@ -9,6 +9,7 @@
         "apiToken": "<Your Pushbullet API token>"
     },
     "settings": {
-        "checksBeforeNotification": 3
+        "checksBeforeNotification": 3,
+        "messageUsers": true
     }
 }
