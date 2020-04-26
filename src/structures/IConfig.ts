@@ -1,4 +1,3 @@
-
 /**
  * Describes the configuration file
  *
