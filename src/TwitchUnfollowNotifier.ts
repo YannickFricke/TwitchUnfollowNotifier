@@ -176,10 +176,7 @@ export class TwitchUnfollowNotifier {
                     continue;
                 }
 
-                if (this.shouldMessageUsers) {
-                    // Only message users when we should to
-                    await this.notify(knownFollower);
-                }
+                await this.notify(knownFollower);
 
                 this.database.removeFollower(knownFollower.id);
 
@@ -226,6 +223,10 @@ export class TwitchUnfollowNotifier {
         await this.pushbulletClient.notify(userName);
 
         if (this.database.containsMessagedUser(userId)) {
+            return;
+        }
+
+        if (!this.shouldMessageUsers) {
             return;
         }
 
