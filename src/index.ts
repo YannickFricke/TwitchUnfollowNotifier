@@ -31,7 +31,7 @@ async function main() {
 
     await twitchUnfollowNotifier.setUp();
 
-    twitchUnfollowNotifier.run();
+    await twitchUnfollowNotifier.run();
 }
 
 main();
