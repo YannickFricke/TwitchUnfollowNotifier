@@ -1,4 +1,3 @@
-
 /**
  * Describes the configuration file
  *
@@ -38,7 +37,18 @@ export interface IConfig {
         apiToken: string;
     };
 
+    /**
+     * Settings for the application
+     */
     settings: {
+        /**
+         * The amount of checks before unfollowers are messaged
+         */
         checksBeforeNotification: number;
+
+        /**
+         * When set to true the TwitchUnfollowNotifier will message unfollowers
+         */
+        messageUsers: boolean;
     }
 }
