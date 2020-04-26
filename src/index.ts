@@ -24,6 +24,7 @@ async function main() {
         readConfig.twitch.oauthToken,
         readConfig.pushbullet.apiToken,
         readConfig.settings.checksBeforeNotification,
+        readConfig.settings.messageUsers,
     );
 
     logger.info('Starting up!');

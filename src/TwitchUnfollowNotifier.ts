@@ -77,6 +77,11 @@ export class TwitchUnfollowNotifier {
     private checksBeforeNotification: number;
 
     /**
+     * When set to true the unfollowers will be messaged
+     */
+    private shouldMessageUsers: boolean;
+
+    /**
      * Contains the amount of unfollow checks for each user id
      *
      * @private
@@ -110,6 +115,7 @@ export class TwitchUnfollowNotifier {
         oauthToken: string,
         pushBulletToken: string,
         checksBeforeNotification: number,
+        shouldMessageUsers: boolean,
     ) {
         this.twitchClient = new TwitchClient(
             clientId,
@@ -125,6 +131,7 @@ export class TwitchUnfollowNotifier {
         this.messageManager = new MessageManager();
         this.channelId = channelId;
         this.checksBeforeNotification = checksBeforeNotification;
+        this.shouldMessageUsers = shouldMessageUsers;
         this.unfollowChecks = new Map<string, number>();
 
         this.run = this.run.bind(this);
@@ -169,7 +176,10 @@ export class TwitchUnfollowNotifier {
                     continue;
                 }
 
-                await this.notify(knownFollower);
+                if (this.shouldMessageUsers) {
+                    // Only message users when we should to
+                    await this.notify(knownFollower);
+                }
 
                 this.database.removeFollower(knownFollower.id);
 
